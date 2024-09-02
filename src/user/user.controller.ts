@@ -6,11 +6,13 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 
 @ApiTags('users')
 @Controller('users')
@@ -24,7 +26,7 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
-
+  @UseGuards(JwtAuthGuard)
   @Get()
   @ApiOperation({ summary: 'Listar todos os usuários' })
   @ApiResponse({
@@ -36,6 +38,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':cpf')
   @ApiOperation({ summary: 'Buscar um usuário por CPF' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso.' })
@@ -44,6 +47,7 @@ export class UserController {
     return this.userService.findOne(cpf);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':cpf')
   @ApiOperation({ summary: 'Atualizar um usuário existente' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso.' })
@@ -56,6 +60,7 @@ export class UserController {
     return this.userService.update(cpf, updateUserDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':cpf')
   @ApiOperation({ summary: 'Excluir um usuário por CPF' })
   @ApiResponse({ status: 200, description: 'Usuário excluído com sucesso.' })
