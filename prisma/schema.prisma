@@ -9,15 +9,16 @@ datasource db {
 
 model Transaction {
   id          Int       @id @default(autoincrement())
-  senderId    Int
-  receiverId  Int
+  senderCpf   String
+  receiverCpf String
   amount      Decimal   @db.Decimal(10, 2)
   type        String    // 'deposit' ou 'transfer'
+  status      String    // 'created', 'processing', 'completed', 'error', 'reverted'
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  sender      User      @relation("SentTransactions", fields: [senderId], references: [id])
-  receiver    User      @relation("ReceivedTransactions", fields: [receiverId], references: [id])
+  sender      User      @relation("SentTransactions", fields: [senderCpf], references: [cpf])
+  receiver    User      @relation("ReceivedTransactions", fields: [receiverCpf], references: [cpf])
 }
 
 model User {
@@ -26,6 +27,7 @@ model User {
   email                 String          @unique
   balance               Decimal         @db.Decimal(10, 2)
   cpf                   String          @unique
+  password              String
   createdAt             DateTime        @default(now())
   updatedAt             DateTime        @updatedAt
   sentTransactions      Transaction[]   @relation("SentTransactions")
