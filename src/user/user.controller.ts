@@ -19,7 +19,7 @@ import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
+  @Post('/create')
   @ApiOperation({ summary: 'Criar um novo usuário' })
   @ApiResponse({ status: 201, description: 'Usuário criado com sucesso.' })
   @ApiResponse({ status: 400, description: 'Dados inválidos fornecidos.' })
@@ -27,7 +27,7 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
   @UseGuards(JwtAuthGuard)
-  @Get()
+  @Get('/list')
   @ApiOperation({ summary: 'Listar todos os usuários' })
   @ApiResponse({
     status: 200,
@@ -39,7 +39,7 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get(':cpf')
+  @Get('/list/:cpf')
   @ApiOperation({ summary: 'Buscar um usuário por CPF' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado com sucesso.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
@@ -48,7 +48,7 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Patch(':cpf')
+  @Patch('/update/:cpf')
   @ApiOperation({ summary: 'Atualizar um usuário existente' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso.' })
   @ApiResponse({ status: 400, description: 'Dados inválidos fornecidos.' })
@@ -61,7 +61,7 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Delete(':cpf')
+  @Delete('/delete/:cpf')
   @ApiOperation({ summary: 'Excluir um usuário por CPF' })
   @ApiResponse({ status: 200, description: 'Usuário excluído com sucesso.' })
   @ApiResponse({ status: 404, description: 'Usuário não encontrado.' })
