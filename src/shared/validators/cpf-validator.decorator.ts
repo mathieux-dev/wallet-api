@@ -9,7 +9,7 @@ import { cpf as cpfValidator } from 'cpf-cnpj-validator';
 @ValidatorConstraint({ async: false })
 export class IsCpfConstraint implements ValidatorConstraintInterface {
   validate(cpf: string) {
-    return cpfValidator.isValid(cpf); // Validação usando a biblioteca cpf-cnpj-validator
+    return cpfValidator.isValid(cpf);
   }
 
   defaultMessage() {

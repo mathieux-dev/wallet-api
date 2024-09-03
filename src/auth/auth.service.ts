@@ -18,7 +18,11 @@ export class AuthService {
 
     if (
       user &&
-      (await this.usersService.validatePassword(password, user.password))
+      (await this.usersService.validatePassword(
+        password,
+        user.password,
+        user.cpf,
+      ))
     ) {
       this.logger.log(`Usuário validado com sucesso: ${email}`);
       const { ...result } = user;
