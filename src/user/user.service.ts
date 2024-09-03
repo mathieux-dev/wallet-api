@@ -19,6 +19,15 @@ export class UserService {
   async create(createUserDto: CreateUserDto) {
     this.logger.log(`Tentando criar usuário com CPF: ${createUserDto.cpf}`);
 
+    if (createUserDto.balance < 50) {
+      this.logger.warn(
+        `Tentativa de criação falhou: saldo inicial ${createUserDto.balance} menor que 50.00.`,
+      );
+      throw new BadRequestException(
+        'O saldo inicial deve ser pelo menos 50.00.',
+      );
+    }
+
     const existingUserByEmail = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -41,20 +50,12 @@ export class UserService {
       throw new BadRequestException('Este CPF já está em uso.');
     }
 
-    if (createUserDto.balance < 50.0) {
-      this.logger.warn(
-        `Tentativa de criação falhou: saldo inicial ${createUserDto.balance} menor que 50.00.`,
-      );
-      throw new BadRequestException(
-        'O saldo inicial deve ser pelo menos 50.00.',
-      );
-    }
-
     const hashedPassword = await hash(createUserDto.password, this.saltRounds);
 
     this.logger.log(
       `Usuário com CPF: ${createUserDto.cpf} criado com sucesso.`,
     );
+
     return this.prisma.user.create({
       data: {
         ...createUserDto,
@@ -155,7 +156,16 @@ export class UserService {
   async validatePassword(
     plainTextPassword: string,
     hashedPassword: string,
+    cpf: string,
   ): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { cpf },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado.');
+    }
+
     return compare(plainTextPassword, hashedPassword);
   }
 }
