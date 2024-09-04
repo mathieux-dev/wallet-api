@@ -1,0 +1,41 @@
+services:
+  app:
+    build:
+      context: .
+    container_name: wallet-api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:admin@db:5432/wallet_db"
+      JWT_SECRET: "42b0f3bef4cf6aaf01df1c6fd2a976ccf2e5ad2600d4503cfdda6dc8a8f53b27"
+    depends_on:
+      - db
+    networks:
+      - wallet-network
+
+  db:
+    image: postgres:latest
+    container_name: wallet-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: wallet_db
+    networks:
+      - wallet-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wallet-pgadmin
+    ports:
+      - "8080:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    networks:
+      - wallet-network
+
+networks:
+  wallet-network:
+    driver: bridge
