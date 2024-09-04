@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   Injectable,
   BadRequestException,
@@ -60,12 +61,16 @@ export class UserService {
         `Usuário com CPF: ${createUserDto.cpf} criado com sucesso.`,
       );
 
-      return this.prisma.user.create({
+      const result = await this.prisma.user.create({
         data: {
           ...createUserDto,
           password: hashedPassword,
         },
       });
+
+      const { password, ...safeUser } = result;
+
+      return safeUser;
     } catch (error) {
       this.logger.error(
         `Erro ao tentar criar usuário com CPF: ${createUserDto.cpf} - ${error.message}`,
@@ -102,11 +107,15 @@ export class UserService {
         }
       }
 
-      this.logger.log(`Usuário com CPF: ${cpf} atualizado com sucesso.`);
-      return this.prisma.user.update({
+      const result = await this.prisma.user.update({
         where: { cpf: cpf },
         data: updateUserDto,
       });
+
+      this.logger.log(`Usuário com CPF: ${cpf} atualizado com sucesso.`);
+      const { password, ...safeUser } = result;
+
+      return safeUser;
     } catch (error) {
       this.logger.error(
         `Erro ao tentar atualizar usuário com CPF: ${cpf} - ${error.message}`,
@@ -118,7 +127,9 @@ export class UserService {
   async findAll() {
     this.logger.log(`Buscando todos os usuários.`);
     try {
-      return await this.prisma.user.findMany();
+      const users = await this.prisma.user.findMany();
+
+      return users.map(({ password, ...user }) => user);
     } catch (error) {
       this.logger.error(`Erro ao buscar todos os usuários: ${error.message}`);
       throw error;
@@ -138,7 +149,9 @@ export class UserService {
         throw new NotFoundException('Usuário não encontrado.');
       }
 
-      return user;
+      const { password, ...safeUser } = user;
+
+      return safeUser;
     } catch (error) {
       this.logger.error(
         `Erro ao buscar usuário com CPF: ${cpf} - ${error.message}`,
