@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from 'src/user/user.service';
 import { PrismaService } from 'prisma/prisma.service';
@@ -50,7 +51,7 @@ describe('UserService', () => {
         password: await hash(createUserDto.password, 10),
       });
 
-      const result = await service.create(createUserDto);
+      const user = await service.create(createUserDto);
 
       expect(prismaService.user.findUnique).toHaveBeenCalledTimes(2);
       expect(prismaService.user.create).toHaveBeenCalledWith({
@@ -59,10 +60,12 @@ describe('UserService', () => {
           password: expect.any(String),
         },
       });
-      expect(result).toEqual({
+      expect(user).toEqual({
         id: 1,
-        ...createUserDto,
-        password: expect.any(String),
+        name: createUserDto.name,
+        email: createUserDto.email,
+        cpf: createUserDto.cpf,
+        balance: createUserDto.balance,
       });
     });
 
