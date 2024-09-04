@@ -304,13 +304,9 @@ describe('UserService', () => {
         name: 'John Doe',
       });
 
-      prismaService.user.delete = jest.fn().mockResolvedValue({
-        id: 1,
-        cpf,
-        name: 'John Doe',
-      });
+      prismaService.user.delete = jest.fn().mockResolvedValue(undefined);
 
-      const result = await service.remove(cpf);
+      await expect(service.remove(cpf)).resolves.toBeUndefined();
 
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
         where: { cpf },
@@ -318,34 +314,54 @@ describe('UserService', () => {
       expect(prismaService.user.delete).toHaveBeenCalledWith({
         where: { cpf },
       });
-      expect(result).toEqual({
-        id: 1,
-        cpf,
-        name: 'John Doe',
-      });
     });
 
-    it('deve lançar uma exceção se o usuário não for encontrado', async () => {
+    it('deve lançar uma exceção NotFoundException se o usuário não for encontrado', async () => {
       const cpf = '123.456.789-00';
 
       prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
 
       await expect(service.remove(cpf)).rejects.toThrow(NotFoundException);
+
       expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf },
+      });
+      expect(prismaService.user.delete).not.toHaveBeenCalled();
+    });
+
+    it('deve lançar uma exceção se ocorrer um erro ao tentar remover o usuário', async () => {
+      const cpf = '123.456.789-00';
+
+      prismaService.user.findUnique = jest.fn().mockResolvedValue({
+        id: 1,
+        cpf,
+        name: 'John Doe',
+      });
+
+      prismaService.user.delete = jest
+        .fn()
+        .mockRejectedValue(new Error('Erro ao deletar'));
+
+      await expect(service.remove(cpf)).rejects.toThrow('Erro ao deletar');
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf },
+      });
+      expect(prismaService.user.delete).toHaveBeenCalledWith({
         where: { cpf },
       });
     });
   });
 
   describe('validatePassword', () => {
-    it('deve validar corretamente a senha de um usuário', async () => {
+    it('deve retornar verdadeiro se a senha estiver correta', async () => {
       const password = 'password123';
       const hashedPassword = await hash(password, 10);
       const cpf = '123.456.789-00';
 
       prismaService.user.findUnique = jest.fn().mockResolvedValue({
         id: 1,
-        cpf: '123.456.789-00',
+        cpf,
         password: hashedPassword,
       });
 
@@ -356,38 +372,42 @@ describe('UserService', () => {
       );
 
       expect(result).toBe(true);
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf },
+      });
     });
 
-    it('deve retornar falso se a senha estiver incorreta', async () => {
+    it('deve lançar NotFoundException se o usuário não for encontrado', async () => {
+      const cpf = '123.456.789-00';
+      prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.validatePassword('password123', 'hashedPassword', cpf),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf },
+      });
+    });
+
+    it('deve lançar BadRequestException se a senha estiver incorreta', async () => {
       const password = 'password123';
       const hashedPassword = await hash(password, 10);
       const cpf = '123.456.789-00';
 
       prismaService.user.findUnique = jest.fn().mockResolvedValue({
         id: 1,
-        cpf: '123.456.789-00',
+        cpf,
         password: hashedPassword,
       });
 
-      const result = await service.validatePassword(
-        'password123',
-        'wrongpassword',
-        cpf,
-      );
-
-      expect(result).toBe(false);
-    });
-
-    it('deve lançar uma exceção se o usuário não for encontrado', async () => {
-      prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
-
       await expect(
-        service.validatePassword(
-          'password123',
-          'hashedpassword',
-          '123.456.789-00',
-        ),
-      ).rejects.toThrow(NotFoundException);
+        service.validatePassword('wrongpassword', hashedPassword, cpf),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({
+        where: { cpf },
+      });
     });
   });
 });

@@ -112,24 +112,16 @@ describe('UserController', () => {
     expect(service.update).toHaveBeenCalledWith('12345678901', updateUserDto);
   });
 
-  it('deve excluir um usuário por CPF', async () => {
-    const removedUser = {
-      id: 1,
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      cpf: '12345678901',
-      password: 'password123',
-      balance: new Decimal(100),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  it('deve excluir um usuário por CPF com sucesso', async () => {
+    const cpf = '12345678901';
 
-    jest.spyOn(service, 'remove').mockResolvedValue(removedUser);
+    jest.spyOn(service, 'remove').mockResolvedValue(undefined);
 
-    const result = await controller.remove('12345678901');
+    const result = await controller.remove(cpf);
 
-    expect(result).toEqual(removedUser);
-    expect(service.remove).toHaveBeenCalledWith('12345678901');
+    expect(service.remove).toHaveBeenCalledWith(cpf);
+
+    expect(result).toBeUndefined();
   });
 
   it('deve retornar 404 ao tentar buscar um usuário inexistente por CPF', async () => {
