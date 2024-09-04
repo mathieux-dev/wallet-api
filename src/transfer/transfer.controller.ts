@@ -6,7 +6,12 @@ import {
   Param,
   Patch,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
 import { TransferService } from './transfer.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
@@ -16,6 +21,7 @@ import { CreateTransferDto } from './dto/create-transfer.dto';
 export class TransferController {
   constructor(private readonly transferService: TransferService) {}
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Realizar uma transferência' })
@@ -28,6 +34,7 @@ export class TransferController {
     return this.transferService.createTransfer(createTransferDto);
   }
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Patch('revert/:id')
   @ApiOperation({ summary: 'Reverter uma transferência' })

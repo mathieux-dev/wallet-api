@@ -19,153 +19,216 @@ export class UserService {
   async create(createUserDto: CreateUserDto) {
     this.logger.log(`Tentando criar usuário com CPF: ${createUserDto.cpf}`);
 
-    if (createUserDto.balance < 50) {
-      this.logger.warn(
-        `Tentativa de criação falhou: saldo inicial ${createUserDto.balance} menor que 50.00.`,
+    try {
+      if (createUserDto.balance < 50) {
+        this.logger.warn(
+          `Tentativa de criação falhou: saldo inicial ${createUserDto.balance} menor que 50.00.`,
+        );
+        throw new BadRequestException(
+          'O saldo inicial deve ser pelo menos 50.00.',
+        );
+      }
+
+      const existingUserByEmail = await this.prisma.user.findUnique({
+        where: { email: createUserDto.email },
+      });
+
+      if (existingUserByEmail) {
+        this.logger.warn(
+          `Tentativa de criação falhou: email ${createUserDto.email} já está em uso.`,
+        );
+        throw new BadRequestException('Este e-mail já está em uso.');
+      }
+
+      const existingUserByCpf = await this.prisma.user.findUnique({
+        where: { cpf: createUserDto.cpf },
+      });
+
+      if (existingUserByCpf) {
+        this.logger.warn(
+          `Tentativa de criação falhou: CPF ${createUserDto.cpf} já está em uso.`,
+        );
+        throw new BadRequestException('Este CPF já está em uso.');
+      }
+
+      const hashedPassword = await hash(
+        createUserDto.password,
+        this.saltRounds,
       );
-      throw new BadRequestException(
-        'O saldo inicial deve ser pelo menos 50.00.',
+
+      this.logger.log(
+        `Usuário com CPF: ${createUserDto.cpf} criado com sucesso.`,
       );
+
+      return this.prisma.user.create({
+        data: {
+          ...createUserDto,
+          password: hashedPassword,
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao tentar criar usuário com CPF: ${createUserDto.cpf} - ${error.message}`,
+      );
+      throw error;
     }
-
-    const existingUserByEmail = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
-    });
-
-    if (existingUserByEmail) {
-      this.logger.warn(
-        `Tentativa de criação falhou: email ${createUserDto.email} já está em uso.`,
-      );
-      throw new BadRequestException('Este e-mail já está em uso.');
-    }
-
-    const existingUserByCpf = await this.prisma.user.findUnique({
-      where: { cpf: createUserDto.cpf },
-    });
-
-    if (existingUserByCpf) {
-      this.logger.warn(
-        `Tentativa de criação falhou: CPF ${createUserDto.cpf} já está em uso.`,
-      );
-      throw new BadRequestException('Este CPF já está em uso.');
-    }
-
-    const hashedPassword = await hash(createUserDto.password, this.saltRounds);
-
-    this.logger.log(
-      `Usuário com CPF: ${createUserDto.cpf} criado com sucesso.`,
-    );
-
-    return this.prisma.user.create({
-      data: {
-        ...createUserDto,
-        password: hashedPassword,
-      },
-    });
   }
 
   async update(cpf: string, updateUserDto: UpdateUserDto) {
     this.logger.log(`Tentando atualizar usuário com CPF: ${cpf}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { cpf: cpf },
-    });
-
-    if (!user) {
-      this.logger.warn(
-        `Usuário com CPF: ${cpf} não encontrado para atualização.`,
-      );
-      throw new NotFoundException('Usuário não encontrado.');
-    }
-
-    if (updateUserDto.email) {
-      const existingUserByEmail = await this.prisma.user.findUnique({
-        where: { email: updateUserDto.email },
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { cpf: cpf },
       });
 
-      if (existingUserByEmail && existingUserByEmail.cpf !== cpf) {
+      if (!user) {
         this.logger.warn(
-          `Tentativa de atualização falhou: email ${updateUserDto.email} já está em uso.`,
+          `Usuário com CPF: ${cpf} não encontrado para atualização.`,
         );
-        throw new BadRequestException('Este e-mail já está em uso.');
+        throw new NotFoundException('Usuário não encontrado.');
       }
-    }
 
-    this.logger.log(`Usuário com CPF: ${cpf} atualizado com sucesso.`);
-    return this.prisma.user.update({
-      where: { cpf: cpf },
-      data: updateUserDto,
-    });
+      if (updateUserDto.email) {
+        const existingUserByEmail = await this.prisma.user.findUnique({
+          where: { email: updateUserDto.email },
+        });
+
+        if (existingUserByEmail && existingUserByEmail.cpf !== cpf) {
+          this.logger.warn(
+            `Tentativa de atualização falhou: email ${updateUserDto.email} já está em uso.`,
+          );
+          throw new BadRequestException('Este e-mail já está em uso.');
+        }
+      }
+
+      this.logger.log(`Usuário com CPF: ${cpf} atualizado com sucesso.`);
+      return this.prisma.user.update({
+        where: { cpf: cpf },
+        data: updateUserDto,
+      });
+    } catch (error) {
+      this.logger.error(
+        `Erro ao tentar atualizar usuário com CPF: ${cpf} - ${error.message}`,
+      );
+      throw error;
+    }
   }
 
   async findAll() {
     this.logger.log(`Buscando todos os usuários.`);
-    return this.prisma.user.findMany();
+    try {
+      return await this.prisma.user.findMany();
+    } catch (error) {
+      this.logger.error(`Erro ao buscar todos os usuários: ${error.message}`);
+      throw error;
+    }
   }
 
   async findOne(cpf: string) {
     this.logger.log(`Buscando usuário com CPF: ${cpf}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { cpf: cpf },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { cpf: cpf },
+      });
 
-    if (!user) {
-      this.logger.warn(`Usuário com CPF: ${cpf} não encontrado.`);
-      throw new NotFoundException('Usuário não encontrado.');
+      if (!user) {
+        this.logger.warn(`Usuário com CPF: ${cpf} não encontrado.`);
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário com CPF: ${cpf} - ${error.message}`,
+      );
+      throw error;
     }
-
-    return user;
   }
 
   async findOneByEmail(email: string) {
     this.logger.log(`Buscando usuário com email: ${email}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { email: email },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: email },
+      });
 
-    if (!user) {
-      this.logger.warn(`Usuário com email: ${email} não encontrado.`);
-      throw new NotFoundException('Usuário não encontrado.');
+      if (!user) {
+        this.logger.warn(`Usuário com email: ${email} não encontrado.`);
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao buscar usuário com email: ${email} - ${error.message}`,
+      );
+      throw error;
     }
-
-    return user;
   }
 
   async remove(cpf: string) {
-    this.logger.log(`Tentando remover usuário com CPF: ${cpf}`);
+    this.logger.log(`Removendo usuário com CPF: ${cpf}`);
 
-    const user = await this.prisma.user.findUnique({
-      where: { cpf: cpf },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { cpf: cpf },
+      });
 
-    if (!user) {
-      this.logger.warn(
-        `Tentativa de remoção falhou: usuário com CPF: ${cpf} não encontrado.`,
+      if (!user) {
+        this.logger.warn(
+          `Usuário com CPF: ${cpf} não encontrado para remoção.`,
+        );
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+
+      await this.prisma.user.delete({
+        where: { cpf: cpf },
+      });
+
+      this.logger.log(`Usuário com CPF: ${cpf} removido com sucesso.`);
+    } catch (error) {
+      this.logger.error(
+        `Erro ao remover usuário com CPF: ${cpf} - ${error.message}`,
       );
-      throw new NotFoundException('Usuário não encontrado.');
+      throw error;
     }
-
-    this.logger.log(`Usuário com CPF: ${cpf} removido com sucesso.`);
-    return this.prisma.user.delete({
-      where: { cpf: cpf },
-    });
   }
 
   async validatePassword(
     plainTextPassword: string,
     hashedPassword: string,
     cpf: string,
-  ): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { cpf },
-    });
+  ) {
+    this.logger.log(`Validando senha para usuário com CPF: ${cpf}`);
 
-    if (!user) {
-      throw new NotFoundException('Usuário não encontrado.');
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { cpf: cpf },
+      });
+
+      if (!user) {
+        this.logger.warn(
+          `Tentativa de validação de senha falhou: usuário com CPF ${cpf} não encontrado.`,
+        );
+        throw new NotFoundException('Usuário não encontrado.');
+      }
+
+      const isPasswordValid = await compare(plainTextPassword, hashedPassword);
+
+      if (!isPasswordValid) {
+        this.logger.warn(`Senha inválida para usuário com CPF ${cpf}.`);
+        throw new BadRequestException('Senha inválida.');
+      }
+
+      return isPasswordValid;
+    } catch (error) {
+      this.logger.error(
+        `Erro ao validar senha para usuário com CPF: ${cpf} - ${error.message}`,
+      );
+      throw error;
     }
-
-    return compare(plainTextPassword, hashedPassword);
   }
 }

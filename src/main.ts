@@ -9,9 +9,17 @@ async function bootstrap() {
     .setTitle('Wallet API')
     .setDescription('A API para gerenciar usuários e transações na carteira.')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'access-token',
+    ) // O segundo parâmetro é o nome da chave para o esquema de segurança
     .addTag('users')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 

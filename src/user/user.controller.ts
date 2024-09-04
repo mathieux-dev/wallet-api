@@ -8,7 +8,12 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -26,6 +31,8 @@ export class UserController {
   async create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
   }
+
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Get('/list')
   @ApiOperation({ summary: 'Listar todos os usuários' })
@@ -38,6 +45,7 @@ export class UserController {
     return this.userService.findAll();
   }
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Get('/list/:cpf')
   @ApiOperation({ summary: 'Buscar um usuário por CPF' })
@@ -47,6 +55,7 @@ export class UserController {
     return this.userService.findOne(cpf);
   }
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Patch('/update/:cpf')
   @ApiOperation({ summary: 'Atualizar um usuário existente' })
@@ -60,6 +69,7 @@ export class UserController {
     return this.userService.update(cpf, updateUserDto);
   }
 
+  @ApiBearerAuth('access-token')
   @UseGuards(JwtAuthGuard)
   @Delete('/delete/:cpf')
   @ApiOperation({ summary: 'Excluir um usuário por CPF' })
